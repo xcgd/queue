@@ -74,6 +74,7 @@ Features:
   description, number of retries
 * Related Actions: link an action on the job view, such as open the record
   concerned by the job
+* Mixin: add a smart button by inheritance. (See the mixin file for more details).
 
 **Table of contents**
 
@@ -423,7 +424,7 @@ promote its widespread use.
 
 Current `maintainer <https://odoo-community.org/page/maintainer-role>`__:
 
-|maintainer-guewen| 
+|maintainer-guewen|
 
 This module is part of the `OCA/queue <https://github.com/OCA/queue/tree/13.0/queue_job>`_ project on GitHub.
 
