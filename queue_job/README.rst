@@ -23,7 +23,7 @@ Job Queue
     :target: https://runbot.odoo-community.org/runbot/230/13.0
     :alt: Try me on Runbot
 
-|badge1| |badge2| |badge3| |badge4| |badge5| 
+|badge1| |badge2| |badge3| |badge4| |badge5|
 
 This addon adds an integrated Job Queue to Odoo.
 
@@ -322,6 +322,7 @@ Next
   process (when running with --workers > 0)
 * [REF] ``@job`` and ``@related_action`` deprecated, any method can be delayed,
   and configured using ``queue.job.function`` records
+* [FIX] Handle connection to the database via Unix socket correctly.
 
 
 13.0.1.2.0 (2020-03-10)
@@ -396,7 +397,7 @@ promote its widespread use.
 
 Current `maintainer <https://odoo-community.org/page/maintainer-role>`__:
 
-|maintainer-guewen| 
+|maintainer-guewen|
 
 This module is part of the `OCA/queue <https://github.com/OCA/queue/tree/13.0/queue_job>`_ project on GitHub.
 
