@@ -73,6 +73,7 @@ Features:
   description, number of retries
 * Related Actions: link an action on the job view, such as open the record
   concerned by the job
+* Mixin: add a smart button by inheritance. (See the mixin file for more details).
 
 **Table of contents**
 

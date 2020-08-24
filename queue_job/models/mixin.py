@@ -59,7 +59,6 @@ class QueueMixin(models.AbstractModel):
         readonly=True,
     )
 
-    @api.multi
     def open_queue_jobs(self):
         """Display queue jobs related to this model.
         """
@@ -69,9 +68,8 @@ class QueueMixin(models.AbstractModel):
         return {
             "context": self._context,
             "domain": [("id", "in", self.queue_job_ids.ids)],
-            "name": _("%s - Queue jobs") % self.name,
+            "name": _("{} - Queue jobs").format(self.name),
             "res_model": "queue.job",
             "type": "ir.actions.act_window",
             "view_mode": "tree,form",
-            "view_type": "form",
         }
