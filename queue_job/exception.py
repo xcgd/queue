@@ -1,5 +1,5 @@
 # Copyright 2012-2016 Camptocamp
-# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
+# License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html)
 
 
 class BaseQueueJobError(Exception):
@@ -12,10 +12,6 @@ class JobError(BaseQueueJobError):
 
 class NoSuchJobError(JobError):
     """The job does not exist."""
-
-
-class NotReadableJobError(JobError):
-    """The job cannot be read from the storage."""
 
 
 class FailedJobError(JobError):
