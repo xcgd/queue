@@ -22,6 +22,7 @@ Next
   (`#46 <https://github.com/OCA/queue/pull/46>`_)
 * [FIX] Error when creating a job channel manually
   (`#96 <https://github.com/OCA/queue/pull/96>`_)
+* [FIX] Handle connection to the database via Unix socket correctly.
 
 11.0.1.1.0 (2018-05-25)
 ~~~~~~~~~~~~~~~~~~~~~~~
