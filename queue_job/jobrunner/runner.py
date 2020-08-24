@@ -142,12 +142,11 @@ import threading
 import time
 from contextlib import closing, contextmanager
 
+import odoo
 import psycopg2
 import requests
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-
-import odoo
 from odoo.tools import config
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 from . import queue_job_config
 from .channels import ENQUEUED, NOT_DONE, PENDING, ChannelManager
@@ -308,7 +307,8 @@ class Database(object):
     def _has_queue_job(self):
         with closing(self.conn.cursor()) as cr:
             cr.execute(
-                "SELECT 1 FROM pg_tables WHERE tablename=%s", ("ir_module_module",)
+                "SELECT 1 FROM pg_tables WHERE tablename=%s",
+                ("ir_module_module",),
             )
             if not cr.fetchone():
                 return False
@@ -410,7 +410,9 @@ class QueueJobRunner(object):
                     self.channel_manager.remove_db(db_name)
                 db.close()
             except Exception:
-                _logger.warning("error closing database %s", db_name, exc_info=True)
+                _logger.warning(
+                    "error closing database %s", db_name, exc_info=True
+                )
         self.db_by_name = {}
 
     def initialize_databases(self):
@@ -430,7 +432,9 @@ class QueueJobRunner(object):
         for job in self.channel_manager.get_jobs_to_run(now):
             if self._stop:
                 break
-            _logger.info("asking Odoo to run job %s on db %s", job.uuid, job.db_name)
+            _logger.info(
+                "asking Odoo to run job %s on db %s", job.uuid, job.db_name
+            )
             self.db_by_name[job.db_name].set_job_enqueued(job.uuid)
             _async_http_get(
                 self.scheme,
@@ -512,7 +516,8 @@ class QueueJobRunner(object):
                 self.stop()
             except Exception:
                 _logger.exception(
-                    "exception: sleeping %ds and retrying", ERROR_RECOVERY_DELAY
+                    "exception: sleeping %ds and retrying",
+                    ERROR_RECOVERY_DELAY,
                 )
                 self.close_databases()
                 time.sleep(ERROR_RECOVERY_DELAY)

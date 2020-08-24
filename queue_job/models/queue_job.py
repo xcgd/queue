@@ -30,7 +30,9 @@ class QueueJob(models.Model):
     _default_related_action = "related_action_open_record"
 
     uuid = fields.Char(string="UUID", readonly=True, index=True, required=True)
-    user_id = fields.Many2one(comodel_name="res.users", string="User ID", required=True)
+    user_id = fields.Many2one(
+        comodel_name="res.users", string="User ID", required=True
+    )
     company_id = fields.Many2one(
         comodel_name="res.company", string="Company", index=True
     )
@@ -42,7 +44,10 @@ class QueueJob(models.Model):
     args = JobSerialized(readonly=True, base_type=tuple)
     kwargs = JobSerialized(readonly=True, base_type=dict)
     func_string = fields.Char(
-        string="Task", compute="_compute_func_string", readonly=True, store=True
+        string="Task",
+        compute="_compute_func_string",
+        readonly=True,
+        store=True,
     )
 
     state = fields.Selection(STATES, readonly=True, required=True, index=True)
@@ -76,7 +81,10 @@ class QueueJob(models.Model):
 
     override_channel = fields.Char()
     channel = fields.Char(
-        compute="_compute_channel", inverse="_inverse_channel", store=True, index=True
+        compute="_compute_channel",
+        inverse="_inverse_channel",
+        store=True,
+        index=True,
     )
 
     identity_key = fields.Char()
@@ -100,7 +108,9 @@ class QueueJob(models.Model):
     @api.depends("job_function_id.channel_id")
     def _compute_channel(self):
         for record in self:
-            record.channel = record.override_channel or record.job_function_id.channel
+            record.channel = (
+                record.override_channel or record.job_function_id.channel
+            )
 
     @api.depends("model_name", "method_name", "job_function_id.channel_id")
     def _compute_job_function(self):
@@ -119,9 +129,14 @@ class QueueJob(models.Model):
             record_ids = record.record_ids
             model = repr(self.env[record.model_name].browse(record_ids))
             args = [repr(arg) for arg in record.args]
-            kwargs = ["{}={!r}".format(key, val) for key, val in record.kwargs.items()]
+            kwargs = [
+                "{}={!r}".format(key, val)
+                for key, val in record.kwargs.items()
+            ]
             all_args = ", ".join(args + kwargs)
-            record.func_string = "{}.{}({})".format(model, record.method_name, all_args)
+            record.func_string = "{}.{}({})".format(
+                model, record.method_name, all_args
+            )
 
     def open_related_action(self):
         """Open the related action associated to the job"""
@@ -166,7 +181,9 @@ class QueueJob(models.Model):
         for record in self:
             msg = record._message_failed_job()
             if msg:
-                record.message_post(body=msg, subtype="queue_job.mt_job_failed")
+                record.message_post(
+                    body=msg, subtype="queue_job.mt_job_failed"
+                )
 
     def write(self, vals):
         res = super(QueueJob, self).write(vals)
@@ -213,9 +230,14 @@ class QueueJob(models.Model):
         Called from a cron.
         """
         for channel in self.env["queue.job.channel"].search([]):
-            deadline = datetime.now() - timedelta(days=int(channel.removal_interval))
+            deadline = datetime.now() - timedelta(
+                days=int(channel.removal_interval)
+            )
             jobs = self.search(
-                [("date_done", "<=", deadline), ("channel", "=", channel.complete_name)]
+                [
+                    ("date_done", "<=", deadline),
+                    ("channel", "=", channel.complete_name),
+                ]
             )
             if jobs:
                 jobs.unlink()
@@ -263,12 +285,16 @@ class RequeueJob(models.TransientModel):
     def _default_job_ids(self):
         res = False
         context = self.env.context
-        if context.get("active_model") == "queue.job" and context.get("active_ids"):
+        if context.get("active_model") == "queue.job" and context.get(
+            "active_ids"
+        ):
             res = context["active_ids"]
         return res
 
     job_ids = fields.Many2many(
-        comodel_name="queue.job", string="Jobs", default=lambda r: r._default_job_ids()
+        comodel_name="queue.job",
+        string="Jobs",
+        default=lambda r: r._default_job_ids(),
     )
 
     def requeue(self):
@@ -297,7 +323,9 @@ class JobChannel(models.Model):
         compute="_compute_complete_name", store=True, readonly=True
     )
     parent_id = fields.Many2one(
-        comodel_name="queue.job.channel", string="Parent Channel", ondelete="restrict"
+        comodel_name="queue.job.channel",
+        string="Parent Channel",
+        ondelete="restrict",
     )
     job_function_ids = fields.One2many(
         comodel_name="queue.job.function",
@@ -305,11 +333,16 @@ class JobChannel(models.Model):
         string="Job Functions",
     )
     removal_interval = fields.Integer(
-        default=lambda self: self.env["queue.job"]._removal_interval, required=True
+        default=lambda self: self.env["queue.job"]._removal_interval,
+        required=True,
     )
 
     _sql_constraints = [
-        ("name_uniq", "unique(complete_name)", "Channel complete name must be unique")
+        (
+            "name_uniq",
+            "unique(complete_name)",
+            "Channel complete name must be unique",
+        )
     ]
 
     @api.depends("name", "parent_id.complete_name")
@@ -318,7 +351,9 @@ class JobChannel(models.Model):
             if not record.name:
                 complete_name = ""  # new record
             elif record.parent_id:
-                complete_name = ".".join([record.parent_id.complete_name, record.name])
+                complete_name = ".".join(
+                    [record.parent_id.complete_name, record.name]
+                )
             else:
                 complete_name = record.name
             record.complete_name = complete_name
@@ -367,7 +402,9 @@ class JobFunction(models.Model):
         required=True,
         default=lambda r: r._default_channel(),
     )
-    channel = fields.Char(related="channel_id.complete_name", store=True, readonly=True)
+    channel = fields.Char(
+        related="channel_id.complete_name", store=True, readonly=True
+    )
 
     def _find_or_create_channel(self, channel_path):
         channel_model = self.env["queue.job.channel"]
@@ -381,7 +418,10 @@ class JobFunction(models.Model):
             channel_name = parts.pop()
             parent_channel = channel
             channel = channel_model.search(
-                [("name", "=", channel_name), ("parent_id", "=", parent_channel.id)],
+                [
+                    ("name", "=", channel_name),
+                    ("parent_id", "=", parent_channel.id),
+                ],
                 limit=1,
             )
             if not channel:

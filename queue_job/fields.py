@@ -5,7 +5,6 @@ import json
 from datetime import date, datetime
 
 import dateutil
-
 from odoo import fields, models
 from odoo.tools.func import lazy
 
@@ -28,13 +27,17 @@ class JobSerialized(fields.Field):
 
     _default_json_mapping = {dict: "{}", list: "[]", tuple: "[]"}
 
-    def __init__(self, string=fields.Default, base_type=fields.Default, **kwargs):
+    def __init__(
+        self, string=fields.Default, base_type=fields.Default, **kwargs
+    ):
         super().__init__(string=string, _base_type=base_type, **kwargs)
 
     def _setup_attrs(self, model, name):
         super()._setup_attrs(model, name)
         if not self._base_type_default_json():
-            raise ValueError("%s is not a supported base type" % (self._base_type))
+            raise ValueError(
+                "%s is not a supported base type" % (self._base_type)
+            )
 
     def _base_type_default_json(self):
         return self._default_json_mapping.get(self._base_type)
@@ -79,7 +82,9 @@ class JobDecoder(json.JSONDecoder):
 
     def __init__(self, *args, **kwargs):
         env = kwargs.pop("env")
-        super(JobDecoder, self).__init__(object_hook=self.object_hook, *args, **kwargs)
+        super(JobDecoder, self).__init__(
+            object_hook=self.object_hook, *args, **kwargs
+        )
         assert env
         self.env = env
 

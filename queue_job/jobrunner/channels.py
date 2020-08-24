@@ -193,7 +193,9 @@ class ChannelJob(object):
 
     """
 
-    def __init__(self, db_name, channel, uuid, seq, date_created, priority, eta):
+    def __init__(
+        self, db_name, channel, uuid, seq, date_created, priority, eta
+    ):
         self.db_name = db_name
         self.channel = channel
         self.uuid = uuid
@@ -338,7 +340,10 @@ class ChannelQueue(object):
             eta_job = self._eta_queue[0]
             job = self._queue[0]
 
-            if eta_job.sorting_key_ignoring_eta() < job.sorting_key_ignoring_eta():
+            if (
+                eta_job.sorting_key_ignoring_eta()
+                < job.sorting_key_ignoring_eta()
+            ):
                 # eta ignored, the job with eta has higher priority
                 # than the job without eta; since it's a sequential
                 # queue we wait until eta
@@ -401,7 +406,9 @@ class Channel(object):
     without risking to overflow the system.
     """
 
-    def __init__(self, name, parent, capacity=None, sequential=False, throttle=0):
+    def __init__(
+        self, name, parent, capacity=None, sequential=False, throttle=0
+    ):
         self.name = name
         self.parent = parent
         if self.parent:
@@ -488,7 +495,9 @@ class Channel(object):
             self._failed.remove(job)
             if self.parent:
                 self.parent.remove(job)
-            _logger.debug("job %s marked pending in channel %s", job.uuid, self)
+            _logger.debug(
+                "job %s marked pending in channel %s", job.uuid, self
+            )
 
     def set_running(self, job):
         """Mark a job as running.
@@ -501,7 +510,9 @@ class Channel(object):
             self._failed.remove(job)
             if self.parent:
                 self.parent.set_running(job)
-            _logger.debug("job %s marked running in channel %s", job.uuid, self)
+            _logger.debug(
+                "job %s marked running in channel %s", job.uuid, self
+            )
 
     def set_failed(self, job):
         """Mark the job as failed. """
@@ -564,11 +575,15 @@ class Channel(object):
             if not job:
                 return
             self._running.add(job)
-            _logger.debug("job %s marked running in channel %s", job.uuid, self)
+            _logger.debug(
+                "job %s marked running in channel %s", job.uuid, self
+            )
             yield job
             if self.throttle:
                 self._pause_until = now + self.throttle
-                _logger.debug("pausing channel %s until %s", self, self._pause_until)
+                _logger.debug(
+                    "pausing channel %s until %s", self, self._pause_until
+                )
                 return
 
     def get_wakeup_time(self, wakeup_time=0):
@@ -866,7 +881,8 @@ class ChannelManager(object):
             name = config_items[0]
             if not name:
                 raise ValueError(
-                    "Invalid channel config %s: missing channel name" % config_string
+                    "Invalid channel config %s: missing channel name"
+                    % config_string
                 )
             config["name"] = name
             if len(config_items) > 1:
@@ -887,7 +903,8 @@ class ChannelManager(object):
                     else:
                         raise ValueError(
                             "Invalid channel config %s: "
-                            "incorrect config item %s" % (config_string, config_item)
+                            "incorrect config item %s"
+                            % (config_string, config_item)
                         )
                     if k in config:
                         raise ValueError(
@@ -999,13 +1016,23 @@ class ChannelManager(object):
         return parent
 
     def notify(
-        self, db_name, channel_name, uuid, seq, date_created, priority, eta, state
+        self,
+        db_name,
+        channel_name,
+        uuid,
+        seq,
+        date_created,
+        priority,
+        eta,
+        state,
     ):
         try:
             channel = self.get_channel_by_name(channel_name)
         except ChannelNotFound:
             _logger.warning(
-                "unknown channel %s, using root channel for job %s", channel_name, uuid
+                "unknown channel %s, using root channel for job %s",
+                channel_name,
+                uuid,
             )
             channel = self._root_channel
         job = self._jobs_by_uuid.get(uuid)
@@ -1023,11 +1050,15 @@ class ChannelManager(object):
                 or eta != job.eta
                 or channel != job.channel
             ):
-                _logger.debug("job %s properties changed, rescheduling it", uuid)
+                _logger.debug(
+                    "job %s properties changed, rescheduling it", uuid
+                )
                 self.remove_job(uuid)
                 job = None
         if not job:
-            job = ChannelJob(db_name, channel, uuid, seq, date_created, priority, eta)
+            job = ChannelJob(
+                db_name, channel, uuid, seq, date_created, priority, eta
+            )
             self._jobs_by_uuid[uuid] = job
         # state transitions
         if not state or state == DONE:

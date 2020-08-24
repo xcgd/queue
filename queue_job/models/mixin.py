@@ -40,14 +40,10 @@ class QueueMixin(models.AbstractModel):
     @api.depends("queue_job_ids")
     def _compute_queue_job_count(self):
         for record in self:
-            record.queue_job_count = (
-                len(record.queue_job_ids)
-            )
+            record.queue_job_count = len(record.queue_job_ids)
 
     queue_job_count = fields.Integer(
-        compute=_compute_queue_job_count,
-        string="Queue job count",
-        store=True,
+        compute=_compute_queue_job_count, string="Queue job count", store=True
     )
 
     queue_job_ids = fields.Many2many(

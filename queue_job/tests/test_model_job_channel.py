@@ -1,10 +1,9 @@
 # copyright 2018 Camptocamp
 # license lgpl-3.0 or later (http://www.gnu.org/licenses/lgpl.html)
 
-from psycopg2 import IntegrityError
-
 import odoo
 from odoo.tests import common
+from psycopg2 import IntegrityError
 
 
 class TestJobChannel(common.TransactionCase):
@@ -24,7 +23,9 @@ class TestJobChannel(common.TransactionCase):
         )
         self.assertEqual(channel.name, "sub")
         self.assertEqual(channel.complete_name, "root.sub")
-        channel2 = self.Channel.create({"name": "sub", "parent_id": channel.id})
+        channel2 = self.Channel.create(
+            {"name": "sub", "parent_id": channel.id}
+        )
         self.assertEqual(channel2.name, "sub")
         self.assertEqual(channel2.complete_name, "root.sub.sub")
 

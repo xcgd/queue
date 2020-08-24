@@ -519,7 +519,8 @@ class Job(object):
                 # traceback and message:
                 # http://blog.ianbicking.org/2007/09/12/re-raising-exceptions/
                 new_exc = FailedJobError(
-                    "Max. retries (%d) reached: %s" % (self.max_retries, value or type_)
+                    "Max. retries (%d) reached: %s"
+                    % (self.max_retries, value or type_)
                 )
                 raise new_exc from err
             raise
