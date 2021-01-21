@@ -270,7 +270,6 @@ def enable_keepalive(connection: psycopg2.extensions.connection, is_unix_socket:
         return
     # Time the connection needs to remain idle before start sending
     # keepalive probes
-    import pdb; pdb.set_trace()
     # FIXME: crash when using a socket
     s.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
     # Time between individual keepalive probes
