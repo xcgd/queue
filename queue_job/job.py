@@ -214,6 +214,14 @@ class Job(object):
 
         A description of the result (for humans).
 
+    .. attribute:: exc_name
+
+        Exception error name when the job failed.
+
+    .. attribute:: exc_message
+
+        Exception error message when the job failed.
+
     .. attribute:: exc_info
 
         Exception information (traceback) when the job failed.
@@ -478,6 +486,8 @@ class Job(object):
         self.date_done = None
 
         self.result = None
+        self.exc_name = None
+        self.exc_message = None
         self.exc_info = None
 
         if "company_id" in env.context:
@@ -518,17 +528,36 @@ class Job(object):
 
     def store(self):
         """Store the Job"""
+        job_model = self.env["queue.job"]
+        # The sentinel is used to prevent edition sensitive fields (such as
+        # method_name) from RPC methods.
+        edit_sentinel = job_model.EDIT_SENTINEL
+
+        db_record = self.db_record()
+        if db_record:
+            db_record.with_context(_job_edit_sentinel=edit_sentinel).write(
+                self._store_values()
+            )
+        else:
+            job_model.with_context(_job_edit_sentinel=edit_sentinel).sudo().create(
+                self._store_values(create=True)
+            )
+
+    def _store_values(self, create=False):
         vals = {
             "state": self.state,
             "priority": self.priority,
             "retry": self.retry,
             "max_retries": self.max_retries,
+            "exc_name": self.exc_name,
+            "exc_message": self.exc_message,
             "exc_info": self.exc_info,
             "company_id": self.company_id,
             "result": str(self.result) if self.result else False,
             "date_enqueued": False,
             "date_started": False,
             "date_done": False,
+            "exec_time": False,
             "eta": False,
             "identity_key": False,
             "worker_pid": self.worker_pid,
@@ -540,20 +569,14 @@ class Job(object):
             vals["date_started"] = self.date_started
         if self.date_done:
             vals["date_done"] = self.date_done
+        if self.exec_time:
+            vals["exec_time"] = self.exec_time
         if self.eta:
             vals["eta"] = self.eta
         if self.identity_key:
             vals["identity_key"] = self.identity_key
 
-        job_model = self.env["queue.job"]
-        # The sentinel is used to prevent edition sensitive fields (such as
-        # method_name) from RPC methods.
-        edit_sentinel = job_model.EDIT_SENTINEL
-
-        db_record = self.db_record()
-        if db_record:
-            db_record.with_context(_job_edit_sentinel=edit_sentinel).write(vals)
-        else:
+        if create:
             vals.update(
                 {
                     "user_id": self.env.uid,
@@ -573,7 +596,24 @@ class Job(object):
                     "kwargs": self.kwargs,
                 }
             )
-            job_model.with_context(_job_edit_sentinel=edit_sentinel).sudo().create(vals)
+
+        vals_from_model = self._store_values_from_model()
+        # Sanitize values: make sure you cannot screw core values
+        vals_from_model = {k: v for k, v in vals_from_model.items() if k not in vals}
+        vals.update(vals_from_model)
+        return vals
+
+    def _store_values_from_model(self):
+        vals = {}
+        value_handlers_candidates = (
+            "_job_store_values_for_" + self.method_name,
+            "_job_store_values",
+        )
+        for candidate in value_handlers_candidates:
+            handler = getattr(self.recordset, candidate, None)
+            if handler is not None:
+                vals = handler(self)
+        return vals
 
     @property
     def func_string(self):
@@ -661,10 +701,17 @@ class Job(object):
     def channel(self, value):
         self._channel = value
 
+    @property
+    def exec_time(self):
+        if self.date_done and self.date_started:
+            return (self.date_done - self.date_started).total_seconds()
+        return None
+
     def set_pending(self, result=None, reset_retry=True):
         self.state = PENDING
         self.date_enqueued = None
         self.date_started = None
+        self.date_done = None
         self.worker_pid = None
         if reset_retry:
             self.retry = 0
@@ -684,15 +731,17 @@ class Job(object):
 
     def set_done(self, result=None):
         self.state = DONE
+        self.exc_name = None
         self.exc_info = None
         self.date_done = datetime.now()
         if result is not None:
             self.result = result
 
-    def set_failed(self, exc_info=None):
+    def set_failed(self, **kw):
         self.state = FAILED
-        if exc_info is not None:
-            self.exc_info = exc_info
+        for k, v in kw.items():
+            if v is not None:
+                setattr(self, k, v)
 
     def __repr__(self):
         return "<Job %s, priority:%d>" % (self.uuid, self.priority)
@@ -724,6 +773,7 @@ class Job(object):
         """
         eta_seconds = self._get_retry_seconds(seconds)
         self.eta = timedelta(seconds=eta_seconds)
+        self.exc_name = None
         self.exc_info = None
         if result is not None:
             self.result = result
