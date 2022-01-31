@@ -628,7 +628,18 @@ class Job(object):
 
     @property
     def func(self):
-        recordset = self.recordset.with_context(job_uuid=self.uuid)
+        context_kwargs = {"job_uuid": self.uuid}
+
+        # We explicitely add the company here before calling the target method.
+        # Based on hints from <https://github.com/OCA/queue/issues/363>.
+        # Won't be needed in the long term once the whole context gets
+        # preserved, see <https://github.com/OCA/queue/issues/283>.
+        company_id = self.company_id
+        if company_id:
+            context_kwargs["allowed_company_ids"] = [company_id]
+            context_kwargs["force_company"] = company_id
+
+        recordset = self.recordset.with_context(**context_kwargs)
         return getattr(recordset, self.method_name)
 
     @property
