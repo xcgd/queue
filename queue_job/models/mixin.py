@@ -66,8 +66,19 @@ class QueueMixin(models.AbstractModel):
 
         self.ensure_one()
 
+        # Remove cruft from the Odoo context.
+        context = {
+            key: value
+            for key, value in self.env.context.items()
+            if (
+                not key.startswith("default_")
+                and not key.startswith("search_default_")
+                and key not in ("form_view_ref", "group_by", "tree_view_ref")
+            )
+        }
+
         return {
-            "context": self._context,
+            "context": context,
             "domain": [("id", "in", self.queue_job_ids.ids)],
             "name": _("Queue jobs"),
             "res_model": "queue.job",
